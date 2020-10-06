@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class Written {
+  int id;
   String title;
   String url;
   String description;
+  String image;
 
-  Written(this.title, this.url, this.description);
+  Written(this.id, this.title, this.url, this.description, this.image);
 }
 
 class WrittenTile extends StatelessWidget {

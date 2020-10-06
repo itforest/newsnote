@@ -4,15 +4,23 @@ import 'package:newsnote/widget/web_view_container.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-//map, json 코드
+// 1. 로고 이미지 변경
+// /andorid/app/src/main/res/drawable/launch_backgroud.xml 파일에 로고 이미지 설정
+// /ios/runner/assests.xcassets/lauchimage.imageset
+// 2. map, json 코드
 //https://flutter-ko.dev/docs/development/data-and-backend/json
-//정리
+// 3. 리스트 형식
+//https://devmemory.tistory.com/14
+// 9. 정리
 //https://juyeonglee.tistory.com/14
 //https://fkkmemi.github.io/ff/ff-011/
-// 리스트 형식
-//https://devmemory.tistory.com/14
 
+// 10. 디바이스 정보 가져오기
+//https://pub.dev/packages/device_info/example
 /* 
+
+// 11. 아이콘 이미지
+//https://api.flutter.dev/flutter/material/Icons-class.html
 [
     {
         "id": "0",
@@ -40,14 +48,19 @@ class _FeedScreenState extends State<FeedScreen> {
 
         for (int i = 0; i < writtens.length; i++) {
           var written = writtens[i];
-          Written writtenToAdd =
-              Written(written["title"], written["url"], written["description"]);
+          Written writtenToAdd = Written(
+            written["id"],
+            written["title"],
+            written["url"],
+            written["description"],
+            written["image"],
+          );
 
           setState(() {
             _data.add(writtenToAdd);
           });
         }
-        print(jsonString);
+        //print(jsonString);
       } else {
         print('ERROR!!');
       }
@@ -63,7 +76,7 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(0.5, 0.0, 1.0, 0.5),
+      padding: const EdgeInsets.fromLTRB(0.1, 0.0, 1.0, 0.1),
       itemCount: _data.length,
       itemBuilder: (BuildContext context, int index) {
         if (index == 0) {
@@ -72,151 +85,71 @@ class _FeedScreenState extends State<FeedScreen> {
               children: <Widget>[
                 Expanded(
                     child: Text('피드',
-                        style: TextStyle(fontSize: 30.0, color: Colors.black))),
+                        style: TextStyle(fontSize: 27.0, color: Colors.black))),
               ],
             ),
           );
         } else {
           Written written = _data[index];
+          String imageurl = written.image;
+          print(imageurl);
+
+          if (imageurl == "") {
+            imageurl = 'https://picsum.photos/70/70.jpg'; //image url이 없을때
+          }
 
           return ListTile(
-            onTap: () {},
-            title: Text(written.title),
-            subtitle: Text(written.url), //Text(written.description),
-            trailing: Image.network(
-                //'https://picsum.photos/id/${written.id}/100/100'),
-                'https://picsum.photos/id/1/100/100'),
+            onTap: () {
+              final url = written.url;
+              _handleURLButtonPress(context, url);
+            },
+            title: Text(
+              //'${written.id}. ${written.title}',
+              '${written.title}',
+              style: TextStyle(height: 1.1, fontSize: 17.5),
+            ),
+            subtitle: Text(
+              written.description,
+              style: TextStyle(height: 1.3, fontSize: 12),
+            ),
+            trailing: Image.network('${imageurl}', width: 70, height: 70),
+            isThreeLine: true,
           );
-
-          /* Card(
-              child: Column(
-            children: <Widget>[
-              Text(written.title),
-              Image.network('https://picsum.photos/id/${written.title}/300/300')
-            ],
-          ));
-          */
         }
       },
       separatorBuilder: (context, index) {
-        return Divider();
-      },
-    );
-
-    /*
-    return ListView(
-      
-        padding: const EdgeInsets.fromLTRB(5.0, 35.0, 5.0, 5.0),
-        children: <Widget>[
-          ListTile(
-            title: Row(
-              children: <Widget>[
-                Expanded(
-                    child: Text('피드',
-                        style: TextStyle(fontSize: 30.0, color: Colors.black))),
-                IconButton(
-                  tooltip: '새 글 알림설정',
-                  icon: Padding(
-                      padding: EdgeInsets.only(left: 4, right: 4, top: 0),
-                      child: alarm_pressed == true
-                          ? Icon(Icons.notifications)
-                          : Icon(Icons.notifications_off)),
-                  onPressed: () {
-                    setState(() {
-                      if (alarm_pressed) {
-                        alarm_pressed = false;
-                      } else {
-                        alarm_pressed = true;
-                      }
-                    });
-                  },
+        if (index > 0) {
+          return Column(children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text('     '),
+                Icon(
+                  Icons.favorite_border,
+                  color: Colors.black,
+                  size: 10.0,
                 ),
+                Text('10   ', style: TextStyle(fontSize: 10)),
+                Icon(
+                  Icons.remove_red_eye,
+                  color: Colors.black,
+                  size: 10.0,
+                ),
+                Text(' 1024', style: TextStyle(fontSize: 10)),
               ],
             ),
-          ),
-          ListTile(
-            //backgroundImage: NetworkImage(imageUrl),
-            title: Text('One-line with trailing widget'),
-            subtitle: Text(
-                'Here is a second line aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-            trailing: FlutterLogo(),
-            onTap: () {
-              final url = 'http://www.naver.com';
-              _handleURLButtonPress(context, url);
-              // do something
-            },
-          ),
-          ListTile(
-            //backgroundImage: NetworkImage(imageUrl),
-            title: Text('One-line with trailing widget'),
-            subtitle: Text(
-                'Here is a second line aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-            trailing: FlutterLogo(),
-            onTap: () {
-              final url = 'http://www.naver.com';
-              _handleURLButtonPress(context, url);
-              // do something
-            },
-          ),
-          ListTile(
-            //backgroundImage: NetworkImage(imageUrl),
-            title: Text('One-line with trailing widget'),
-            subtitle: Text(
-                'Here is a second line aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-            trailing: FlutterLogo(),
-            onTap: () {
-              final url = 'http://www.naver.com';
-              _handleURLButtonPress(context, url);
-              // do something
-            },
-          ),
-          Card(
-            child: ListTile(
-              leading: FlutterLogo(),
-              title: Text('One-line with trailing widget'),
-              subtitle: Text(
-                  'Here is a second line aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-              trailing: Icon(Icons.keyboard_arrow_right),
-              isThreeLine: true,
-              onTap: () {
-                final url = 'http://www.naver.com';
-                _handleURLButtonPress(context, url);
-                // do something
-              },
+            Divider(
+              height: 18,
             ),
-          ),
-          Card(
-            child: ListTile(
-              leading: FlutterLogo(),
-              title: Text('One-line with trailing widget'),
-              subtitle: Text(
-                  'Here is a second line aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-              trailing: Icon(Icons.keyboard_arrow_right),
-              isThreeLine: true,
-              onTap: () {
-                final url = 'http://www.naver.com';
-                _handleURLButtonPress(context, url);
-                // do something
-              },
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: FlutterLogo(),
-              title: Text('One-line with trailing widget'),
-              subtitle: Text(
-                  'Here is a second line aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-              trailing: Icon(Icons.keyboard_arrow_right),
-              isThreeLine: true,
-              onTap: () {
-                final url = 'http://www.naver.com';
-                _handleURLButtonPress(context, url);
-                // do something
-              },
-            ),
-          ),
-        ]);
-        */
+          ]);
+        } else {
+          return Divider(
+            height: 18,
+            color: Colors.grey,
+          );
+        }
+      },
+    );
   }
 
   void _handleURLButtonPress(BuildContext context, String url) {

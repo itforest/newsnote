@@ -24,21 +24,21 @@ class Bottom extends StatelessWidget {
             ),
             Tab(
               icon: Icon(
-                Icons.search,
+                Icons.format_align_justify,
                 size: 18,
               ),
               child: Text(
-                '서치',
+                '피드',
                 style: TextStyle(fontSize: 9),
               ),
             ),
             Tab(
               icon: Icon(
-                Icons.save,
+                Icons.bookmark_border,
                 size: 18,
               ),
               child: Text(
-                '저장한 콘텐츠 목록',
+                '저장한 콘텐츠',
                 style: TextStyle(fontSize: 9),
               ),
             ),

@@ -4,6 +4,8 @@ import 'package:newsnote/widget/web_view_container.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 // 1. 로고 이미지 변경
 // /andorid/app/src/main/res/drawable/launch_backgroud.xml 파일에 로고 이미지 설정
 // /ios/runner/assests.xcassets/lauchimage.imageset
@@ -38,9 +40,42 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   List _data = [];
+  Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": "like"};
+  Map<String, String> deviceRegHeader = {"X-DEVICE-UUID": ""};
 
-  _fetchData() {
-    http.get('http://49.50.163.204/api/v1/posts').then((response) {
+  Future<String> _loadMem(String kind) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String getStr = await prefs.getString(kind);
+    print('LOAD "${kind}" : $getStr ');
+    deviceRegHeader['X-DEVICE-UUID'] = getStr;
+    postsHeader['X-DEVICE-UUID'] = getStr;
+    _deviceReg();
+  }
+
+  _deviceReg() {
+    print('_deviceReg()');
+    print(deviceRegHeader);
+    http
+        .post('http://49.50.163.204/api/v1/device_infos',
+            headers: deviceRegHeader)
+        .then((response) {
+      if (response.statusCode == 201) {
+        String jsonString = utf8.decode(response.bodyBytes);
+        Map<String, dynamic> resMap = jsonDecode(jsonString);
+        print(resMap['message']);
+        _fetchWrittenList();
+      } else {
+        print('_deviceReg() : ${response.statusCode} Error!');
+      }
+    });
+  }
+
+  _fetchWrittenList() {
+    print('_fetchWrittenList()');
+    print(postsHeader);
+    http
+        .get('http://49.50.163.204/api/v1/posts', headers: postsHeader)
+        .then((response) {
       if (response.statusCode == 200) {
         String jsonString = utf8.decode(response.bodyBytes);
 
@@ -54,15 +89,16 @@ class _FeedScreenState extends State<FeedScreen> {
             written["url"],
             written["description"],
             written["image"],
+            written["likes"],
           );
 
           setState(() {
             _data.add(writtenToAdd);
           });
         }
-        //print(jsonString);
+        print(jsonString);
       } else {
-        print('ERROR!!');
+        print('_fetchData() ERROR!!');
       }
     });
   }
@@ -70,14 +106,14 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _loadMem('uuid');
   }
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(0.1, 0.0, 1.0, 0.1),
-      itemCount: _data.length,
+      itemCount: _data.length + 1,
       itemBuilder: (BuildContext context, int index) {
         if (index == 0) {
           return ListTile(
@@ -90,6 +126,7 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           );
         } else {
+          index = index - 1;
           Written written = _data[index];
           String imageurl = written.image;
           print(imageurl);
@@ -119,6 +156,8 @@ class _FeedScreenState extends State<FeedScreen> {
       },
       separatorBuilder: (context, index) {
         if (index > 0) {
+          index = index - 1;
+          Written written = _data[index];
           return Column(children: <Widget>[
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -129,7 +168,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   color: Colors.black,
                   size: 10.0,
                 ),
-                Text('10   ', style: TextStyle(fontSize: 10)),
+                Text('${written.likes}    ', style: TextStyle(fontSize: 10)),
                 Icon(
                   Icons.remove_red_eye,
                   color: Colors.black,

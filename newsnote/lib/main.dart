@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:newsnote/screen/feed_screen.dart';
 import 'package:newsnote/widget/bottom_bar.dart';
 import 'package:device_info/device_info.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
@@ -19,6 +20,7 @@ class _MyAppState extends State<MyApp> {
   TabController controller;
   bool alarm_pressed = false;
   String uuid;
+  final String TableName = 'Dog';
 
   @override
   void initState() {
@@ -33,23 +35,36 @@ class _MyAppState extends State<MyApp> {
     super.setState(fn);
   }
 
-  void _getDeiveInfo() async {
+  _saveMem(String kind, String saveStr) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kind, saveStr);
+    print('SAVED "${kind}" : $saveStr ');
+  }
+
+  _loadMem(String kind) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String getStr = await prefs.getString(kind);
+    print('LOAD "${kind}" : $getStr ');
+  }
+
+  _getDeiveInfo() async {
     AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
-    String uuid;
+    String get_uuid;
     try {
       if (Platform.isAndroid) {
         AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
 
-        uuid = androidInfo.androidId; //UUID for Android
+        get_uuid = androidInfo.androidId; //UUID for Android
       } else if (Platform.isIOS) {
         IosDeviceInfo iosInfo = await deviceInfoPlugin.iosInfo;
-        uuid = iosInfo.identifierForVendor; //UUID for iOS
+        get_uuid = iosInfo.identifierForVendor; //UUID for iOS
       }
     } on PlatformException {
       print('Failed to get platform version');
     }
     setState(() {
-      print('UUID info!!! ${uuid}');
+      print('UUID info!!! ${get_uuid}');
+      _saveMem('uuid', get_uuid); // shared_prefer 에 uuid 저장
     });
   }
 
@@ -70,6 +85,7 @@ class _MyAppState extends State<MyApp> {
                 IconButton(
                     icon: Icon(Icons.search, color: Colors.black54),
                     onPressed: () {
+                      _saveMem('uuid', uuid);
                       //_fetchData();
                     }),
                 IconButton(

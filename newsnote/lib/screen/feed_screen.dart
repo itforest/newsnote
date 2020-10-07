@@ -42,23 +42,29 @@ class _FeedScreenState extends State<FeedScreen> {
   List _data = [];
   Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": "like"};
   Map<String, String> deviceRegHeader = {"X-DEVICE-UUID": ""};
+  String log = '';
 
-  Future<String> _loadMem(String kind) async {
+  _loadMem(String kind) async {
+    log = log + '_loadMem START | ';
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String getStr = await prefs.getString(kind);
-    print('LOAD "${kind}" : $getStr ');
+    print('LOAD "${kind}" : ${getStr} ');
     deviceRegHeader['X-DEVICE-UUID'] = getStr;
     postsHeader['X-DEVICE-UUID'] = getStr;
     _deviceReg();
+
+    log = log + ('_loadMem END | ');
   }
 
   _deviceReg() {
     print('_deviceReg()');
+    log = log + '_deviceReg START | ';
     print(deviceRegHeader);
     http
         .post('http://49.50.163.204/api/v1/device_infos',
             headers: deviceRegHeader)
         .then((response) {
+      log = log + 'res code : ${response.statusCode}';
       if (response.statusCode == 201) {
         String jsonString = utf8.decode(response.bodyBytes);
         Map<String, dynamic> resMap = jsonDecode(jsonString);
@@ -68,9 +74,11 @@ class _FeedScreenState extends State<FeedScreen> {
         print('_deviceReg() : ${response.statusCode} Error!');
       }
     });
+    log = log + '_deviceReg END | ';
   }
 
   _fetchWrittenList() {
+    log = log + '_fetchWrittenList START | ';
     print('_fetchWrittenList()');
     print(postsHeader);
     http
@@ -100,6 +108,7 @@ class _FeedScreenState extends State<FeedScreen> {
       } else {
         print('_fetchData() ERROR!!');
       }
+      log = log + '_fetchWrittenList END | ';
     });
   }
 
@@ -122,6 +131,13 @@ class _FeedScreenState extends State<FeedScreen> {
                 Expanded(
                     child: Text('피드',
                         style: TextStyle(fontSize: 27.0, color: Colors.black))),
+                Expanded(
+                    child: IconButton(
+                  icon: Icon(Icons.ac_unit),
+                  onPressed: () {
+                    showAlertDialog(context, log);
+                  },
+                ))
               ],
             ),
           );
@@ -134,6 +150,7 @@ class _FeedScreenState extends State<FeedScreen> {
           if (imageurl == "") {
             imageurl = 'https://picsum.photos/70/70.jpg'; //image url이 없을때
           }
+          log = log + written.title;
 
           return ListTile(
             onTap: () {
@@ -204,4 +221,31 @@ class HeaderTile extends StatelessWidget {
       child: Text('피드'),
     );
   }
+}
+
+void showAlertDialog(BuildContext context, String log) async {
+  String result = await showDialog(
+    context: context,
+    barrierDismissible: false, // user must tap button!
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('AlertDialog Demo'),
+        content: Text(log),
+        actions: <Widget>[
+          FlatButton(
+            child: Text('OK'),
+            onPressed: () {
+              Navigator.pop(context, "OK");
+            },
+          ),
+          FlatButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              Navigator.pop(context, "Cancel");
+            },
+          ),
+        ],
+      );
+    },
+  );
 }

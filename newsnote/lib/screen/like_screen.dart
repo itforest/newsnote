@@ -33,56 +33,30 @@ import 'package:shared_preferences/shared_preferences.dart';
     }
 ]
 */
-class FeedScreen extends StatefulWidget {
-  _FeedScreenState createState() => _FeedScreenState();
+class LikeScreen extends StatefulWidget {
+  String uuid;
+  LikeScreen(this.uuid);
+  _LikeScreenState createState() => _LikeScreenState(this.uuid);
 }
 
-class _FeedScreenState extends State<FeedScreen> {
+class _LikeScreenState extends State<LikeScreen> {
+  String _uuid;
+  bool isDisposed = false;
+  _LikeScreenState(this._uuid);
   List _data = [];
   Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": "like"};
-  Map<String, String> deviceRegHeader = {"X-DEVICE-UUID": ""};
-  String log = '';
-  bool isDisposed = false;
-
-  _loadMem(String kind) async {
-    log = log + '_loadMem START | ';
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String getStr = await prefs.getString(kind);
-    print('LOAD "${kind}" : ${getStr} ');
-    deviceRegHeader['X-DEVICE-UUID'] = getStr;
-    postsHeader['X-DEVICE-UUID'] = getStr;
-    _deviceReg();
-
-    log = log + ('_loadMem END | ');
+  @override
+  void dispose() {
+    super.dispose();
+    isDisposed = true;
   }
 
-  _deviceReg() {
-    print('_deviceReg()');
-    log = log + '_deviceReg START | ';
-    print(deviceRegHeader);
-    http
-        .post('http://dofta11.synology.me:8888/api/v1/device_infos',
-            headers: deviceRegHeader)
-        .then((response) {
-      log = log + 'res code : ${response.statusCode}';
-      if (response.statusCode == 201) {
-        String jsonString = utf8.decode(response.bodyBytes);
-        Map<String, dynamic> resMap = jsonDecode(jsonString);
-        print(resMap['message']);
-        _fetchWrittenList();
-      } else {
-        print('_deviceReg() : ${response.statusCode} Error!');
-      }
-    });
-    log = log + '_deviceReg END | ';
-  }
+  _fetchlikeWrittenList() async {
+    print('_fetchWrittenList START');
+    postsHeader['X-DEVICE-UUID'] = _uuid;
 
-  _fetchWrittenList() {
-    log = log + '_fetchWrittenList START | ';
-    print('_fetchWrittenList()');
-    print(postsHeader);
     http
-        .get('http://dofta11.synology.me:8888/api/v1/posts',
+        .get('http://dofta11.synology.me:8888/api/v1/posts?category=like',
             headers: postsHeader)
         .then((response) {
       if (response.statusCode == 200) {
@@ -107,22 +81,17 @@ class _FeedScreenState extends State<FeedScreen> {
             });
           }
         }
+        print(jsonString);
       } else {
         print('_fetchData() ERROR!!');
       }
-      log = log + '_fetchWrittenList END | ';
+      print('_fetchWrittenList END');
     });
   }
 
   @override
   void initState() {
-    _loadMem('uuid');
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    isDisposed = true;
+    _fetchlikeWrittenList();
   }
 
   @override
@@ -141,9 +110,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 Expanded(
                     child: IconButton(
                   icon: Icon(Icons.ac_unit),
-                  onPressed: () {
-                    showAlertDialog(context, log);
-                  },
+                  onPressed: () {},
                 ))
               ],
             ),
@@ -157,13 +124,11 @@ class _FeedScreenState extends State<FeedScreen> {
           if (imageurl == null) {
             imageurl = 'https://picsum.photos/70/70.jpg'; //image url이 없을때
           }
-          log = log + written.title;
 
           return ListTile(
             onTap: () {
               final url = written.url;
-              _handleURLButtonPress(
-                  context, url, written.id, deviceRegHeader['X-DEVICE-UUID']);
+              _handleURLButtonPress(context, url, written.id, _uuid);
             },
             title: Text(
               //'${written.id}. ${written.title}',
@@ -223,40 +188,4 @@ class _FeedScreenState extends State<FeedScreen> {
         MaterialPageRoute(
             builder: (context) => WebViewContainer(url, id, uuid)));
   }
-}
-
-class HeaderTile extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: Text('피드'),
-    );
-  }
-}
-
-void showAlertDialog(BuildContext context, String log) async {
-  String result = await showDialog(
-    context: context,
-    barrierDismissible: false, // user must tap button!
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('AlertDialog Demo'),
-        content: Text(log),
-        actions: <Widget>[
-          FlatButton(
-            child: Text('OK'),
-            onPressed: () {
-              Navigator.pop(context, "OK");
-            },
-          ),
-          FlatButton(
-            child: Text('Cancel'),
-            onPressed: () {
-              Navigator.pop(context, "Cancel");
-            },
-          ),
-        ],
-      );
-    },
-  );
 }

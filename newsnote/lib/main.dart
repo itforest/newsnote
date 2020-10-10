@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:newsnote/screen/feed_screen.dart';
+import 'package:newsnote/screen/home_screen.dart';
 import 'package:newsnote/screen/like_screen.dart';
 import 'package:newsnote/widget/bottom_bar.dart';
 import 'package:device_info/device_info.dart';
@@ -20,6 +21,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  String log = '';
   DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
   Map<String, String> deviceRegHeader = {"X-DEVICE-UUID": ""};
@@ -69,6 +71,7 @@ class _MyAppState extends State<MyApp> {
       assert(token != null);
       print('token : $token');
       requestBody['fcm_token'] = token;
+      log = log + 'getToken : ' + token;
     });
   }
 
@@ -80,9 +83,11 @@ class _MyAppState extends State<MyApp> {
         .post('http://dofta11.synology.me:8888/api/v1/device_infos',
             headers: deviceRegHeader, body: requestBody)
         .then((response) {
+      log = log + '[deviceReg]statusCode = ${response.statusCode}';
       if (response.statusCode == 201) {
         String jsonString = utf8.decode(response.bodyBytes);
         Map<String, dynamic> resMap = jsonDecode(jsonString);
+        log = log + '[deviceReg]statusCode = ${response.statusCode}';
         print(resMap['message']);
       } else {
         print('_deviceReg() : ${response.statusCode} Error!');
@@ -180,7 +185,7 @@ class _MyAppState extends State<MyApp> {
               physics:
                   NeverScrollableScrollPhysics(), //옆으로 스크롤해도 넘어가지 않도록(바텀탭으로만 이동하게 하려고함)
               children: <Widget>[
-                Container(child: Text('1')),
+                HomeScreen(uuid),
                 FeedScreen(),
                 LikeScreen(uuid),
                 Container(child: Text('4')),

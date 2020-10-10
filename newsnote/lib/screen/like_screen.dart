@@ -124,6 +124,9 @@ class _LikeScreenState extends State<LikeScreen> {
           if (imageurl == null) {
             imageurl = 'https://picsum.photos/70/70.jpg'; //image url이 없을때
           }
+          if (written.description == null) {
+            written.description = '';
+          }
 
           return ListTile(
             onTap: () {

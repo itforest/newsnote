@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,8 @@ import 'package:newsnote/screen/like_screen.dart';
 import 'package:newsnote/widget/bottom_bar.dart';
 import 'package:device_info/device_info.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(MyApp());
@@ -18,6 +21,9 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+  Map<String, String> deviceRegHeader = {"X-DEVICE-UUID": ""};
+  Map<String, String> requestBody = {"fcm_token": ""};
   TabController controller;
   bool alarm_pressed = false;
   bool isDisposed = false;
@@ -32,13 +38,63 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     // TODO: implement initState
     super.initState();
+
+    _setFirebaseMsg(_firebaseMessaging);
     _setDeiveInfo();
+  }
+
+  _setFirebaseMsg(FirebaseMessaging _firebaseMessaging) {
+    _firebaseMessaging.configure(
+      onMessage: (Map<String, dynamic> message) async {
+        print("onMessage: $message");
+        //_showItemDialog(message);
+      },
+      onLaunch: (Map<String, dynamic> message) async {
+        print("onLaunch: $message");
+        //navigateToItemDetail(message);
+      },
+      onResume: (Map<String, dynamic> message) async {
+        print("onResume: $message");
+        //_navigateToItemDetail(message);
+      },
+    );
+    _firebaseMessaging.requestNotificationPermissions(
+        const IosNotificationSettings(
+            sound: true, badge: true, alert: true, provisional: true));
+    _firebaseMessaging.onIosSettingsRegistered
+        .listen((IosNotificationSettings settings) {
+      print("Settings registered: $settings");
+    });
+    _firebaseMessaging.getToken().then((String token) {
+      assert(token != null);
+      print('token : $token');
+      requestBody['fcm_token'] = token;
+    });
+  }
+
+  _deviceReg() {
+    print('_deviceReg()');
+    print('$deviceRegHeader');
+    print('$requestBody');
+    http
+        .post('http://dofta11.synology.me:8888/api/v1/device_infos',
+            headers: deviceRegHeader, body: requestBody)
+        .then((response) {
+      if (response.statusCode == 201) {
+        String jsonString = utf8.decode(response.bodyBytes);
+        Map<String, dynamic> resMap = jsonDecode(jsonString);
+        print(resMap['message']);
+      } else {
+        print('_deviceReg() : ${response.statusCode} Error!');
+      }
+    });
   }
 
   _saveMem(String kind, String saveStr) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(kind, saveStr);
     print('[MAIN.DART] SAVED "${kind}" : $saveStr ');
+    _deviceReg();
   }
 
   _loadMem(String kind) async {
@@ -67,6 +123,7 @@ class _MyAppState extends State<MyApp> {
     if (!isDisposed) {
       setState(() {
         print('[MAIN.DART] UUID info!!! ${get_uuid}');
+        deviceRegHeader['X-DEVICE-UUID'] = uuid;
         _saveMem('uuid', get_uuid); // shared_prefer 에 uuid 저장
       });
     }

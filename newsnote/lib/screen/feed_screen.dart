@@ -39,8 +39,9 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   List _data = [];
-  Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": "like"};
-  Map<String, String> deviceRegHeader = {"X-DEVICE-UUID": ""};
+  //Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": "like"};
+  Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": ""};
+
   String log = '';
   bool isDisposed = false;
 
@@ -49,32 +50,9 @@ class _FeedScreenState extends State<FeedScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String getStr = await prefs.getString(kind);
     print('LOAD "${kind}" : ${getStr} ');
-    deviceRegHeader['X-DEVICE-UUID'] = getStr;
     postsHeader['X-DEVICE-UUID'] = getStr;
-    _deviceReg();
-
     log = log + ('_loadMem END | ');
-  }
-
-  _deviceReg() {
-    print('_deviceReg()');
-    log = log + '_deviceReg START | ';
-    print(deviceRegHeader);
-    http
-        .post('http://dofta11.synology.me:8888/api/v1/device_infos',
-            headers: deviceRegHeader)
-        .then((response) {
-      log = log + 'res code : ${response.statusCode}';
-      if (response.statusCode == 201) {
-        String jsonString = utf8.decode(response.bodyBytes);
-        Map<String, dynamic> resMap = jsonDecode(jsonString);
-        print(resMap['message']);
-        _fetchWrittenList();
-      } else {
-        print('_deviceReg() : ${response.statusCode} Error!');
-      }
-    });
-    log = log + '_deviceReg END | ';
+    _fetchWrittenList();
   }
 
   _fetchWrittenList() {
@@ -163,7 +141,7 @@ class _FeedScreenState extends State<FeedScreen> {
             onTap: () {
               final url = written.url;
               _handleURLButtonPress(
-                  context, url, written.id, deviceRegHeader['X-DEVICE-UUID']);
+                  context, url, written.id, postsHeader['X-DEVICE-UUID']);
             },
             title: Text(
               //'${written.id}. ${written.title}',

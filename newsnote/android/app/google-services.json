@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "640283957238",
+    "firebase_url": "https://newsnotepjt.firebaseio.com",
+    "project_id": "newsnotepjt",
+    "storage_bucket": "newsnotepjt.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:640283957238:android:b26e25d9b5e536a8aa99d7",
+        "android_client_info": {
+          "package_name": "com.example.newsnote"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "640283957238-6h38jeas9noddkhj0il1kt195joapn61.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1GsQu3BdaQ-C6gRuMgyrQgj4ZBbzCHjw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "640283957238-6h38jeas9noddkhj0il1kt195joapn61.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

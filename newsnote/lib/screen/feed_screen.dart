@@ -39,8 +39,7 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   List _data = [];
-  //Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": "like"};
-  Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": ""};
+  Map<String, String> postsHeader = {"X-DEVICE-UUID": ""};
 
   String log = '';
   bool isDisposed = false;

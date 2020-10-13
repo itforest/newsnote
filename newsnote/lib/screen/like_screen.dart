@@ -44,7 +44,7 @@ class _LikeScreenState extends State<LikeScreen> {
   bool isDisposed = false;
   _LikeScreenState(this._uuid);
   List _data = [];
-  Map<String, String> postsHeader = {"X-DEVICE-UUID": "", "category": "like"};
+  Map<String, String> postsHeader = {"X-DEVICE-UUID": ""};
   @override
   void dispose() {
     super.dispose();
@@ -52,9 +52,8 @@ class _LikeScreenState extends State<LikeScreen> {
   }
 
   _fetchlikeWrittenList() async {
-    print('_fetchWrittenList START');
     postsHeader['X-DEVICE-UUID'] = _uuid;
-
+    print('_fetchWrittenList START : header ${postsHeader['X-DEVICE-UUID']}');
     http
         .get('http://dofta11.synology.me:8888/api/v1/posts?category=like',
             headers: postsHeader)

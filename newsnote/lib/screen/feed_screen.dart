@@ -70,7 +70,7 @@ class _FeedScreenState extends State<FeedScreen> {
     postsHeader['X-DEVICE-UUID'] = _uuid;
     print(postsHeader);
     http
-        .get('http://dofta11.synology.me:8888/api/v1/posts',
+        .get('http://dofta11.synology.me:8888/api/v1/posts?page=1',
             headers: postsHeader)
         .then((response) {
       if (response.statusCode == 200) {

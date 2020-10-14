@@ -6,30 +6,126 @@ import 'package:flutter/services.dart';
 import 'package:newsnote/screen/feed_screen.dart';
 import 'package:newsnote/screen/home_screen.dart';
 import 'package:newsnote/screen/like_screen.dart';
+import 'package:newsnote/screen/setting_screen.dart';
 import 'package:newsnote/widget/bottom_bar.dart';
 import 'package:device_info/device_info.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  String get_uuid;
+  String get_token;
+  bool reg_success;
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+  print('main()');
+  /*
+  앱 시작전 초기화 작업 진행
+  setDeiveInfo : uuid 가져오기
+  _setFirebaseMsg : fcm token 가져오기
+  _deviceReg : device등록API 호출
+  */
+  get_uuid = await _setDeiveInfo();
+  get_token = await _setFirebaseMsg(_firebaseMessaging);
+  reg_success = await _deviceReg(get_uuid, get_token);
+
+  runApp(MyApp(get_uuid, get_token));
+}
+
+Future<bool> _deviceReg(String uuid, String token) async {
+  print('_deviceReg() START');
+  Map<String, String> deviceRegHeader = {"X-DEVICE-UUID": ""};
+  Map<String, String> requestBody = {"fcm_token": ""};
+  print('param1 : $uuid , param2 : $token');
+
+  deviceRegHeader['X-DEVICE-UUID'] = uuid;
+  requestBody['fcm_token'] = token;
+  final response = await http.post(
+      'http://dofta11.synology.me:8888/api/v1/device_infos',
+      headers: deviceRegHeader,
+      body: requestBody);
+
+  if (response.statusCode == 201) {
+    String jsonString = utf8.decode(response.bodyBytes);
+    Map<String, dynamic> resMap = jsonDecode(jsonString);
+    print(resMap['message']);
+    print('_deviceReg() END');
+  } else {
+    print('_deviceReg() : ${response.statusCode} Error!');
+  }
+}
+
+Future<String> _setDeiveInfo() async {
+  print('_setDeiveInfo() START');
+  DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+  AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
+  String get_uuid;
+  try {
+    if (Platform.isAndroid) {
+      AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
+
+      get_uuid = androidInfo.androidId; //UUID for Android
+    } else if (Platform.isIOS) {
+      IosDeviceInfo iosInfo = await deviceInfoPlugin.iosInfo;
+      get_uuid = iosInfo.identifierForVendor; //UUID for iOS
+    }
+    print('_setDeiveInfo() END');
+    return get_uuid;
+  } on PlatformException {
+    print('Failed to get platform version');
+  }
+}
+
+Future<String> _setFirebaseMsg(FirebaseMessaging _firebaseMessaging) async {
+  print('_firebaseMessaging getToken() START');
+  String token;
+  _firebaseMessaging.configure(
+    onMessage: (Map<String, dynamic> message) async {
+      print("onMessage: $message");
+      //_showItemDialog(message);
+    },
+    onLaunch: (Map<String, dynamic> message) async {
+      print("onLaunch: $message");
+      //navigateToItemDetail(message);
+    },
+    onResume: (Map<String, dynamic> message) async {
+      print("onResume: $message");
+      //_navigateToItemDetail(message);
+    },
+  );
+  _firebaseMessaging.requestNotificationPermissions(
+      const IosNotificationSettings(
+          sound: true, badge: true, alert: true, provisional: true));
+  _firebaseMessaging.onIosSettingsRegistered
+      .listen((IosNotificationSettings settings) {
+    print("Settings registered: $settings");
+  });
+  await _firebaseMessaging.getToken().then((String getToken) async {
+    assert(getToken != null);
+    print('token : $getToken');
+    token = getToken;
+    print('_firebaseMessaging getToken() END');
+  });
+  return token;
 }
 
 class MyApp extends StatefulWidget {
-  _MyAppState createState() => _MyAppState();
+  String uuid;
+  String token;
+  MyApp(this.uuid, this.token);
+  _MyAppState createState() => _MyAppState(uuid, token);
 }
 
 class _MyAppState extends State<MyApp> {
   String log = '';
-  DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
-  Map<String, String> deviceRegHeader = {"X-DEVICE-UUID": ""};
-  Map<String, String> requestBody = {"fcm_token": ""};
+  String token;
+  String uuid;
+  _MyAppState(this.uuid, this.token);
+
   TabController controller;
   bool alarm_pressed = false;
   bool isDisposed = false;
-  String uuid;
   @override
   void dispose() {
     super.dispose();
@@ -37,69 +133,19 @@ class _MyAppState extends State<MyApp> {
   }
 
   @override
-  void initState() {
+  initState() {
     // TODO: implement initState
     super.initState();
-
-    _setFirebaseMsg(_firebaseMessaging);
-    _setDeiveInfo();
+    print('initState()');
+    //_saveMem('UUID', uuid);
   }
 
-  _setFirebaseMsg(FirebaseMessaging _firebaseMessaging) {
-    _firebaseMessaging.configure(
-      onMessage: (Map<String, dynamic> message) async {
-        print("onMessage: $message");
-        //_showItemDialog(message);
-      },
-      onLaunch: (Map<String, dynamic> message) async {
-        print("onLaunch: $message");
-        //navigateToItemDetail(message);
-      },
-      onResume: (Map<String, dynamic> message) async {
-        print("onResume: $message");
-        //_navigateToItemDetail(message);
-      },
-    );
-    _firebaseMessaging.requestNotificationPermissions(
-        const IosNotificationSettings(
-            sound: true, badge: true, alert: true, provisional: true));
-    _firebaseMessaging.onIosSettingsRegistered
-        .listen((IosNotificationSettings settings) {
-      print("Settings registered: $settings");
-    });
-    _firebaseMessaging.getToken().then((String token) {
-      assert(token != null);
-      print('token : $token');
-      requestBody['fcm_token'] = token;
-      log = log + 'getToken : ' + token;
-    });
-  }
-
-  _deviceReg() {
-    print('_deviceReg()');
-    print('$deviceRegHeader');
-    print('$requestBody');
-    http
-        .post('http://dofta11.synology.me:8888/api/v1/device_infos',
-            headers: deviceRegHeader, body: requestBody)
-        .then((response) {
-      log = log + '[deviceReg]statusCode = ${response.statusCode}';
-      if (response.statusCode == 201) {
-        String jsonString = utf8.decode(response.bodyBytes);
-        Map<String, dynamic> resMap = jsonDecode(jsonString);
-        log = log + '[deviceReg]statusCode = ${response.statusCode}';
-        print(resMap['message']);
-      } else {
-        print('_deviceReg() : ${response.statusCode} Error!');
-      }
-    });
-  }
-
+/* sharedmemory 저장 , 로드 기능
   _saveMem(String kind, String saveStr) async {
+    print('_saveMem');
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(kind, saveStr);
     print('[MAIN.DART] SAVED "${kind}" : $saveStr ');
-    _deviceReg();
   }
 
   _loadMem(String kind) async {
@@ -107,33 +153,7 @@ class _MyAppState extends State<MyApp> {
     String getStr = await prefs.getString(kind);
     print('[MAIN.DART] LOAD "${kind}" : $getStr ');
   }
-
-  _setDeiveInfo() async {
-    AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
-    String get_uuid;
-    try {
-      if (Platform.isAndroid) {
-        AndroidDeviceInfo androidInfo = await deviceInfoPlugin.androidInfo;
-
-        get_uuid = androidInfo.androidId; //UUID for Android
-        uuid = get_uuid;
-      } else if (Platform.isIOS) {
-        IosDeviceInfo iosInfo = await deviceInfoPlugin.iosInfo;
-        get_uuid = iosInfo.identifierForVendor; //UUID for iOS
-        uuid = get_uuid;
-      }
-    } on PlatformException {
-      print('Failed to get platform version');
-    }
-    if (!isDisposed) {
-      setState(() {
-        print('[MAIN.DART] UUID info!!! ${get_uuid}');
-        deviceRegHeader['X-DEVICE-UUID'] = uuid;
-        _saveMem('uuid', get_uuid); // shared_prefer 에 uuid 저장
-      });
-    }
-  }
-
+*/
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -186,9 +206,12 @@ class _MyAppState extends State<MyApp> {
                   NeverScrollableScrollPhysics(), //옆으로 스크롤해도 넘어가지 않도록(바텀탭으로만 이동하게 하려고함)
               children: <Widget>[
                 HomeScreen(uuid),
-                FeedScreen(),
+                FeedScreen(uuid),
                 LikeScreen(uuid),
-                Container(child: Text('4')),
+                Container(
+                  child: Text('4'),
+                ),
+                //HomePage(),
               ],
             ),
             bottomNavigationBar: Bottom(),

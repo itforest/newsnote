@@ -32,18 +32,27 @@ import 'package:shared_preferences/shared_preferences.dart';
         "download_url": "https://picsum.photos/..."
     }
 ]
+
+// 12. 페이징 처리!!
+
+https://pub.dev/packages/flutter_paginator/example
 */
 class FeedScreen extends StatefulWidget {
-  _FeedScreenState createState() => _FeedScreenState();
+  String uuid;
+  FeedScreen(this.uuid);
+  _FeedScreenState createState() => _FeedScreenState(this.uuid);
 }
 
 class _FeedScreenState extends State<FeedScreen> {
+  String _uuid;
+  _FeedScreenState(this._uuid);
   List _data = [];
   Map<String, String> postsHeader = {"X-DEVICE-UUID": ""};
 
   String log = '';
   bool isDisposed = false;
 
+  /*
   _loadMem(String kind) async {
     log = log + '_loadMem START | ';
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -53,10 +62,12 @@ class _FeedScreenState extends State<FeedScreen> {
     log = log + ('_loadMem END | ');
     _fetchWrittenList();
   }
+  */
 
   _fetchWrittenList() {
     log = log + '_fetchWrittenList START | ';
     print('_fetchWrittenList()');
+    postsHeader['X-DEVICE-UUID'] = _uuid;
     print(postsHeader);
     http
         .get('http://dofta11.synology.me:8888/api/v1/posts',
@@ -93,7 +104,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   void initState() {
-    _loadMem('uuid');
+    _fetchWrittenList();
   }
 
   @override

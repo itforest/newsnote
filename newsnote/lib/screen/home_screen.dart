@@ -15,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _uuid;
   bool isDisposed = false;
+  int _page = 1;
   _HomeScreenState(this._uuid);
   List _data = [];
   Map<String, String> postsHeader = {"X-DEVICE-UUID": ""};
@@ -27,9 +28,11 @@ class _HomeScreenState extends State<HomeScreen> {
   _fetchlikeWrittenList() async {
     print('_fetchWrittenList START');
     postsHeader['X-DEVICE-UUID'] = _uuid;
+    print('postHeader : $_uuid , page : $_page');
 
     http
-        .get('http://dofta11.synology.me:8888/api/v1/posts?category=top10',
+        .get(
+            'http://dofta11.synology.me:8888/api/v1/posts?page=$_page&category=top10',
             headers: postsHeader)
         .then((response) {
       if (response.statusCode == 200) {
@@ -56,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         print(jsonString);
       } else {
-        print('_fetchData() ERROR!!');
+        print('_fetchData() ERROR!! RESPONSE CODE : [${response.statusCode}]');
       }
       print('_fetchWrittenList END');
     });

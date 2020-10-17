@@ -49,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
             written["description"],
             written["image"],
             written["likes"],
+            written["like_yn"],
             written["created_at"],
           );
           if (!isDisposed) {
@@ -103,7 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListTile(
               onTap: () {
                 final url = written.url;
-                _handleURLButtonPress(context, url, written.id, _uuid);
+                _handleURLButtonPress(
+                    context, url, written.id, _uuid, written.like_yn);
               },
               title: Text(
                 //'${written.id}. ${written.title}',
@@ -159,10 +161,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleURLButtonPress(
-      BuildContext context, String url, int id, String uuid) {
+      BuildContext context, String url, int id, String uuid, bool like_yn) {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => WebViewContainer(url, id, uuid)));
+            builder: (context) => WebViewContainer(url, id, uuid, like_yn)));
   }
 }

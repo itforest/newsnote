@@ -7,10 +7,11 @@ class Written {
   String description;
   String image;
   int likes;
+  bool like_yn;
   String created_at;
 
   Written(this.id, this.title, this.url, this.description, this.image,
-      this.likes, this.created_at);
+      this.likes, this.like_yn, this.created_at);
 }
 
 class WrittenTile extends StatelessWidget {

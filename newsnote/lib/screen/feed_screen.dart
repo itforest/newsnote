@@ -51,7 +51,8 @@ class _FeedScreenState extends State<FeedScreen> {
 
   String log = '';
   bool isDisposed = false;
-
+  bool isLoading = false;
+  int page = 1;
   /*
   _loadMem(String kind) async {
     log = log + '_loadMem START | ';
@@ -64,13 +65,14 @@ class _FeedScreenState extends State<FeedScreen> {
   }
   */
 
-  _fetchWrittenList() {
+  _fetchWrittenList() async {
     log = log + '_fetchWrittenList START | ';
     print('_fetchWrittenList()');
     postsHeader['X-DEVICE-UUID'] = _uuid;
-    print(postsHeader);
+    print('$postsHeader / $page');
+    //await new Future.delayed(new Duration(seconds: 2));
     http
-        .get('http://dofta11.synology.me:8888/api/v1/posts?page=1',
+        .get('http://dofta11.synology.me:8888/api/v1/posts?page=$page',
             headers: postsHeader)
         .then((response) {
       if (response.statusCode == 200) {
@@ -87,6 +89,7 @@ class _FeedScreenState extends State<FeedScreen> {
             written["description"],
             written["image"],
             written["likes"],
+            written["like_yn"],
             written["created_at"],
           );
           if (!isDisposed) {
@@ -95,10 +98,12 @@ class _FeedScreenState extends State<FeedScreen> {
             });
           }
         }
+        page++;
       } else {
         print('_fetchData() ERROR!!');
       }
       log = log + '_fetchWrittenList END | ';
+      isLoading = false;
     });
   }
 
@@ -115,7 +120,129 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    return Column(
+      children: [
+        Expanded(
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (!isLoading &&
+                  scrollInfo.metrics.pixels ==
+                      scrollInfo.metrics.maxScrollExtent) {
+                _fetchWrittenList();
+                setState(() {
+                  isLoading = true;
+                });
+              }
+            },
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(0.1, 0.0, 1.0, 0.1),
+              itemCount: _data.length + 1,
+              itemBuilder: (BuildContext context, int index) {
+                if (index == 0) {
+                  return ListTile(
+                    title: Row(
+                      children: <Widget>[
+                        Expanded(
+                            child: Text('피드',
+                                style: TextStyle(
+                                    fontSize: 27.0, color: Colors.black))),
+                        Expanded(
+                            child: IconButton(
+                          icon: Icon(Icons.ac_unit),
+                          onPressed: () {
+                            showAlertDialog(context, log);
+                          },
+                        ))
+                      ],
+                    ),
+                  );
+                } else {
+                  index = index - 1;
+                  Written written = _data[index];
+                  String imageurl = written.image;
+                  print(imageurl);
+
+                  if (imageurl == null) {
+                    imageurl =
+                        'https://picsum.photos/70/70.jpg'; //image url이 없을때
+                  }
+                  if (written.description == null) {
+                    written.description = ''; //내용 없을때
+                  }
+                  log = log + written.title;
+
+                  return ListTile(
+                    onTap: () {
+                      final url = written.url;
+                      _handleURLButtonPress(context, url, written.id,
+                          postsHeader['X-DEVICE-UUID'], written.like_yn);
+                    },
+                    title: Text(
+                      //'${written.id}. ${written.title}',
+                      '${written.id}.${written.title}',
+                      style: TextStyle(height: 1.1, fontSize: 17.5),
+                    ),
+                    subtitle: Text(
+                      '${written.description}',
+                      style: TextStyle(height: 1.3, fontSize: 12),
+                    ),
+                    trailing:
+                        Image.network('${imageurl}', width: 70, height: 70),
+                    isThreeLine: true,
+                  );
+                }
+              },
+              separatorBuilder: (context, index) {
+                if (index > 0) {
+                  index = index - 1;
+                  Written written = _data[index];
+                  return Column(children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text('     '),
+                        Icon(
+                          Icons.favorite_border,
+                          color: Colors.black,
+                          size: 10.0,
+                        ),
+                        Text('${written.likes}    ',
+                            style: TextStyle(fontSize: 10)),
+                        Icon(
+                          Icons.remove_red_eye,
+                          color: Colors.black,
+                          size: 10.0,
+                        ),
+                        Text(' 1024', style: TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                    Divider(
+                      height: 18,
+                    ),
+                  ]);
+                } else {
+                  return Divider(
+                    height: 18,
+                    color: Colors.grey,
+                  );
+                }
+              },
+            ),
+          ),
+        ),
+        Container(
+          height: isLoading ? 40.0 : 0,
+          color: Colors.transparent,
+          child: Center(
+            child: new CircularProgressIndicator(
+              valueColor: new AlwaysStoppedAnimation<Color>(Colors.black54),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    /* return ListView.separated(
       padding: const EdgeInsets.fromLTRB(0.1, 0.0, 1.0, 0.1),
       itemCount: _data.length + 1,
       itemBuilder: (BuildContext context, int index) {
@@ -202,14 +329,15 @@ class _FeedScreenState extends State<FeedScreen> {
         }
       },
     );
+    */
   }
 
   void _handleURLButtonPress(
-      BuildContext context, String url, int id, String uuid) {
+      BuildContext context, String url, int id, String uuid, bool like_yn) {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => WebViewContainer(url, id, uuid)));
+            builder: (context) => WebViewContainer(url, id, uuid, like_yn)));
   }
 }
 

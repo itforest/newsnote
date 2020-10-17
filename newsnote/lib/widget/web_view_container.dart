@@ -8,18 +8,20 @@ class WebViewContainer extends StatefulWidget {
   final url;
   int id;
   String uuid;
-  WebViewContainer(this.url, this.id, this.uuid);
+  bool like_yn;
+  WebViewContainer(this.url, this.id, this.uuid, this.like_yn);
   @override
-  createState() => _WebViewContainerState(this.url, this.id, this.uuid);
+  createState() =>
+      _WebViewContainerState(this.url, this.id, this.uuid, this.like_yn);
 }
 
 class _WebViewContainerState extends State<WebViewContainer> {
   var _url;
   var _id;
   var _uuid;
-  bool pressed = true;
+  bool _like_yn;
   final _key = UniqueKey();
-  _WebViewContainerState(this._url, this._id, this._uuid);
+  _WebViewContainerState(this._url, this._id, this._uuid, this._like_yn);
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +33,11 @@ class _WebViewContainerState extends State<WebViewContainer> {
           IconButton(
             icon: Padding(
                 padding: EdgeInsets.all(0),
-                child: pressed == true
+                child: _like_yn == true
                     ? Icon(Icons.favorite, color: Colors.grey)
                     : Icon(Icons.favorite_border, color: Colors.grey)),
             onPressed: () => setState(() {
-              pressed = !pressed;
+              _like_yn = !_like_yn;
               _likeIncrements(this._uuid, this._id);
             }),
           )

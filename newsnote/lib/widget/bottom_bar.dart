@@ -11,6 +11,7 @@ class Bottom extends StatelessWidget {
           labelColor: Colors.blueAccent,
           unselectedLabelColor: Colors.grey,
           indicatorColor: Colors.transparent,
+          //onTap: _onItemTappedForTabBar,
           tabs: <Widget>[
             Tab(
               icon: Icon(
